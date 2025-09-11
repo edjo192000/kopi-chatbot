@@ -1,7 +1,8 @@
 # app/config.py
 import os
 from typing import Optional
-from pydantic_settings import BaseSettings
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -20,12 +21,17 @@ class Settings(BaseSettings):
     api_timeout_seconds: int = 30
     log_level: str = "INFO"
 
+    # OpenAI Configuration (optional for now)
+    openai_api_key: Optional[str] = None
+
     # Environment
     environment: str = "development"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"  # Ignore extra fields from .env
+    )
 
 
 # Global settings instance

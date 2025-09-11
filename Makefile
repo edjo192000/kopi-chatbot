@@ -58,3 +58,17 @@ format: ## Format code
 
 build: ## Build Docker image
 	docker-compose build
+
+test-api: ## Test the API functionality
+	@echo "Testing API functionality..."
+	python test_api.py
+
+test-redis: ## Test Redis integration specifically
+	@echo "Testing Redis integration..."
+	python test_redis_integration.py
+
+check: ## Run all checks (tests + API functionality + Redis)
+	@echo "Running comprehensive checks..."
+	@make test
+	@make test-api
+	@make test-redis
