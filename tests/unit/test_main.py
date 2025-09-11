@@ -17,7 +17,7 @@ def test_root():
     data = response.json()
     assert "message" in data
     assert "redis_status" in data
-    assert data["message"] == "Kopi Chatbot API v2.0 is running"
+    assert data["message"] == "Kopi Chatbot API v3.0 is running"
 
 
 def test_health_endpoint():
@@ -31,7 +31,7 @@ def test_health_endpoint():
     assert "redis" in data
     assert "settings" in data
     assert data["status"] == "healthy"
-    assert data["version"] == "2.0.0"
+    assert data["version"] == "3.0.0"
 
 
 def test_stats_endpoint():

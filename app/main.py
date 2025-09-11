@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from app.models.chat_models import ChatRequest, ChatResponse, ConversationStats
 from app.services.conversation_service import conversation_service
 from app.services.redis_service import redis_service
+from app.services.ai_service import ai_service
 from app.config import settings
 import logging
 
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    logger.info("🚀 Starting Kopi Chatbot API v2.0.0")
+    logger.info("🚀 Starting Kopi Chatbot API v3.0.0")
     logger.info(f"Environment: {settings.environment}")
     logger.info(f"Redis URL: {settings.redis_url}")
 
@@ -29,6 +30,13 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("⚠️ Redis connection failed - using fallback mode")
 
+    # Test AI service
+    if ai_service.is_available:
+        logger.info("✅ OpenAI API connection established")
+        logger.info(f"Using model: {settings.openai_model}")
+    else:
+        logger.warning("⚠️ OpenAI API not available - using fallback responses")
+
     yield
 
     # Shutdown
@@ -37,8 +45,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Kopi Chatbot API",
-    description="API for a persuasive chatbot that can hold debates",
-    version="2.0.0",
+    description="API for a persuasive chatbot that can hold debates with AI integration",
+    version="3.0.0",
     lifespan=lifespan
 )
 
@@ -56,9 +64,10 @@ app.add_middleware(
 async def root():
     """Health check endpoint"""
     return {
-        "message": "Kopi Chatbot API v2.0 is running",
-        "version": "2.0.0",
-        "redis_status": "connected" if redis_service.is_connected() else "disconnected"
+        "message": "Kopi Chatbot API v3.0 is running",
+        "version": "3.0.0",
+        "redis_status": "connected" if redis_service.is_connected() else "disconnected",
+        "ai_status": "available" if ai_service.is_available else "fallback"
     }
 
 
@@ -66,11 +75,13 @@ async def root():
 async def health_check():
     """Detailed health check endpoint"""
     redis_stats = redis_service.get_conversation_stats()
+    ai_status = ai_service.get_status()
 
     return {
         "status": "healthy",
-        "version": "2.0.0",
+        "version": "3.0.0",
         "redis": redis_stats,
+        "ai": ai_status,
         "settings": {
             "conversation_ttl": settings.conversation_ttl_seconds,
             "max_messages": settings.max_conversation_messages,
@@ -94,7 +105,7 @@ async def get_stats():
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """
-    Main chat endpoint with Redis integration
+    Main chat endpoint with AI and Redis integration
     """
     try:
         logger.info(f"💬 Processing chat request for conversation: {request.conversation_id}")
@@ -122,6 +133,7 @@ async def delete_conversation(conversation_id: str):
         else:
             raise HTTPException(status_code=404, detail="Conversation not found")
     except HTTPException:
+        # Re-raise HTTPExceptions (like 404) without changing them
         raise
     except Exception as e:
         logger.error(f"❌ Error deleting conversation: {str(e)}")

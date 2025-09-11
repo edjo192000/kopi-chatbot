@@ -23,6 +23,11 @@ class Settings(BaseSettings):
 
     # OpenAI Configuration (optional for now)
     openai_api_key: Optional[str] = None
+    openai_model: str = "gpt-4o-mini"  # Cost-effective model
+    openai_max_tokens: int = 500
+    openai_temperature: float = 0.8  # Creative but controlled
+    openai_timeout: int = 30
+    openai_enabled: bool = True  # Can disable OpenAI fallback to hardcoded responses
 
     # Environment
     environment: str = "development"
