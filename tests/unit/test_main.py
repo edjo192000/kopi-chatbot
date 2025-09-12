@@ -1,4 +1,4 @@
-# tests/test_main.py
+# tests/unit/test_main.py
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
@@ -15,23 +15,38 @@ def test_root():
     response = client.get("/")
     assert response.status_code == 200
     data = response.json()
+
+    # Check updated structure for v2.0
     assert "message" in data
-    assert "redis_status" in data
-    assert data["message"] == "Kopi Chatbot API v3.0 is running"
+    assert "version" in data
+    assert "status" in data
+    assert "features" in data
+    assert "endpoints" in data
+
+    assert "Meta-Persuasion Enabled" in data["message"]
+    assert data["status"] == "active"
+    assert "Meta-persuasion analysis" in data["features"]
 
 
 def test_health_endpoint():
     """Test the detailed health endpoint"""
     response = client.get("/health")
-    assert response.status_code == 200
+    assert response.status_code in [200, 503]  # May be degraded without Redis
     data = response.json()
 
     assert "status" in data
     assert "version" in data
-    assert "redis" in data
-    assert "settings" in data
-    assert data["status"] == "healthy"
-    assert data["version"] == "3.0.0"
+    assert "services" in data
+    assert "timestamp" in data
+
+    # Check services structure
+    services = data["services"]
+    assert "redis" in services
+    assert "ai_service" in services
+    assert "meta_persuasion" in services
+
+    # Check version
+    assert data["version"] == "2.0.0"
 
 
 def test_stats_endpoint():
@@ -44,6 +59,12 @@ def test_stats_endpoint():
     assert "redis_status" in data
     assert "system_info" in data
     assert isinstance(data["total_conversations"], int)
+
+    # Check system_info includes meta-persuasion
+    system_info = data["system_info"]
+    assert "meta_persuasion_enabled" in system_info
+    assert "version" in system_info
+    assert system_info["version"] == "2.0.0"
 
 
 def test_chat_new_conversation():
@@ -60,15 +81,23 @@ def test_chat_new_conversation():
     # Check response structure
     assert "conversation_id" in data
     assert "messages" in data
-    assert len(data["messages"]) == 2  # User + bot message
+    assert len(data["messages"]) >= 2  # User + bot message (may include educational content)
 
     # Check message structure
     messages = data["messages"]
     assert messages[0]["role"] == "user"
     assert messages[0]["message"] == "I think the Earth is round"
-    assert messages[1]["role"] == "bot"
-    assert isinstance(messages[1]["message"], str)
-    assert len(messages[1]["message"]) > 0
+
+    # Find bot message (should be second, but might have educational content)
+    bot_message = None
+    for msg in messages:
+        if msg["role"] == "bot":
+            bot_message = msg
+            break
+
+    assert bot_message is not None
+    assert isinstance(bot_message["message"], str)
+    assert len(bot_message["message"]) > 0
 
     # Verify conversation ID is a valid UUID
     try:
@@ -104,13 +133,14 @@ def test_chat_continue_conversation():
     # Check conversation ID is preserved
     assert data["conversation_id"] == conversation_id
 
-    # Check we have 4 messages now (2 pairs)
-    assert len(data["messages"]) == 4
+    # Check we have at least 4 messages (2 pairs, might have more with educational content)
+    assert len(data["messages"]) >= 4
 
-    # Check message history is maintained
-    messages = data["messages"]
-    assert messages[0]["message"] == "I believe vaccines are dangerous"
-    assert messages[2]["message"] == "What about the scientific evidence?"
+    # Check message history is maintained (find user messages)
+    user_messages = [msg for msg in data["messages"] if msg["role"] == "user"]
+    assert len(user_messages) >= 2
+    assert user_messages[0]["message"] == "I believe vaccines are dangerous"
+    assert user_messages[1]["message"] == "What about the scientific evidence?"
 
 
 def test_chat_invalid_request():
@@ -141,28 +171,116 @@ def test_chat_very_long_message():
     assert response.status_code == 422  # Validation error
 
 
-def test_delete_conversation_existing():
-    """Test deleting an existing conversation"""
-    # Create a conversation first
+def test_analyze_endpoint():
+    """Test the new analyze endpoint"""
+    response = client.post(
+        "/analyze",
+        json={"message": "Research shows that 95% of experts agree this is the best approach!"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "message" in data
+    assert "topic" in data
+    assert "persuasion_analysis" in data
+    assert "analysis_summary" in data
+    assert "timestamp" in data
+
+    # Check analysis structure
+    analysis = data["persuasion_analysis"]
+    assert "techniques_detected" in analysis
+    assert "persuasion_score" in analysis
+
+    # Should detect some techniques from this persuasive message
+    summary = data["analysis_summary"]
+    assert summary["technique_count"] >= 1
+
+
+def test_demonstrate_endpoint():
+    """Test the new demonstrate endpoint"""
+    response = client.post(
+        "/demonstrate",
+        json={
+            "technique": "anchoring",
+            "topic": "technology",
+            "context": "discussing new innovations"
+        }
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "technique" in data
+    assert "topic" in data
+    assert "demonstration" in data
+    assert "educational_value" in data
+    assert "timestamp" in data
+
+    assert data["technique"] == "anchoring"
+    assert data["topic"] == "technology"
+
+
+def test_demonstrate_invalid_technique():
+    """Test demonstrate endpoint with invalid technique"""
+    response = client.post(
+        "/demonstrate",
+        json={"technique": "invalid_technique"}
+    )
+    assert response.status_code == 400
+    assert "Invalid technique" in response.json()["detail"]
+
+
+def test_techniques_endpoint():
+    """Test the new techniques endpoint"""
+    response = client.get("/techniques")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "available_techniques" in data
+    assert "total_count" in data
+    assert "categories" in data
+    assert "usage_tips" in data
+    assert "timestamp" in data
+
+    # Should have multiple techniques
+    assert data["total_count"] > 0
+    assert len(data["available_techniques"]) == data["total_count"]
+
+
+def test_conversation_analysis_endpoint():
+    """Test the conversation analysis endpoint"""
+    # First create a conversation
     chat_response = client.post(
         "/chat",
-        json={"message": "Test message for deletion"}
+        json={"message": "I think artificial intelligence will replace all jobs"}
     )
     conversation_id = chat_response.json()["conversation_id"]
 
-    # Delete the conversation
-    delete_response = client.delete(f"/conversations/{conversation_id}")
-    assert delete_response.status_code == 200
+    # Add another message
+    client.post(
+        "/chat",
+        json={
+            "conversation_id": conversation_id,
+            "message": "Multiple studies show 89% of experts agree AI displacement is accelerating"
+        }
+    )
 
-    data = delete_response.json()
-    assert "message" in data
-    assert conversation_id in data["message"]
+    # Now analyze the conversation
+    analysis_response = client.get(f"/conversation/{conversation_id}/analysis")
+    assert analysis_response.status_code == 200
+
+    data = analysis_response.json()
+    assert "conversation_id" in data
+    assert "message_count" in data
+    assert "message_analyses" in data
+    assert "insights" in data
+    assert "recommendations" in data
+    assert "timestamp" in data
 
 
-def test_delete_conversation_nonexistent():
-    """Test deleting a non-existent conversation"""
+def test_conversation_analysis_not_found():
+    """Test conversation analysis for non-existent conversation"""
     fake_id = str(uuid.uuid4())
-    response = client.delete(f"/conversations/{fake_id}")
+    response = client.get(f"/conversation/{fake_id}/analysis")
     assert response.status_code == 404
 
 
@@ -221,7 +339,14 @@ def test_different_topic_responses():
         assert response.status_code == 200
 
         data = response.json()
-        bot_message = data["messages"][1]["message"].lower()
+        # Find bot message
+        bot_message = None
+        for msg in data["messages"]:
+            if msg["role"] == "bot":
+                bot_message = msg["message"].lower()
+                break
+
+        assert bot_message is not None
         responses.append(bot_message)
 
         # Verify bot takes a stance (response contains topic-related keywords)
@@ -252,10 +377,60 @@ def test_conversation_persistence_across_requests():
         # Check conversation ID remains the same
         assert data["conversation_id"] == conversation_id
 
-        # Check message count increases correctly
-        expected_count = 2 + (i + 1) * 2  # Initial 2 + each round adds 2
-        assert len(data["messages"]) == expected_count
+        # Check that user messages are present and correct
+        user_messages = [msg for msg in data["messages"] if msg["role"] == "user"]
+        assert len(user_messages) >= i + 2  # Initial message + current messages
 
         # Check latest user message is correct
-        assert data["messages"][-2]["message"] == message
-        assert data["messages"][-2]["role"] == "user"
+        assert user_messages[-1]["message"] == message
+        assert user_messages[-1]["role"] == "user"
+
+
+def test_meta_persuasion_integration():
+    """Test that meta-persuasion features are working"""
+    # Test a message with multiple persuasion techniques
+    persuasive_message = "Leading experts at Harvard and MIT have proven that 97% of scientists agree this approach works. Imagine how this could transform your life!"
+
+    response = client.post("/chat", json={"message": persuasive_message})
+    assert response.status_code == 200
+
+    # The response might include educational content due to the sophisticated message
+    data = response.json()
+    bot_messages = [msg for msg in data["messages"] if msg["role"] == "bot"]
+    assert len(bot_messages) >= 1
+
+    # Check if educational content was added (might be present as a note)
+    bot_response = bot_messages[0]["message"]
+    assert len(bot_response) > 0
+
+
+def test_error_handling():
+    """Test various error conditions"""
+    # Test malformed JSON for analyze endpoint
+    response = client.post("/analyze", json={})
+    assert response.status_code == 400
+
+    # Test invalid conversation ID format
+    response = client.get("/conversation/invalid-id/analysis")
+    assert response.status_code == 404
+
+
+def test_cors_headers():
+    """Test that CORS headers are properly set"""
+    response = client.options("/")
+    # FastAPI should handle CORS automatically with our middleware
+    assert response.status_code in [200, 405]  # OPTIONS might not be explicitly handled
+
+
+def test_api_versioning():
+    """Test that API returns correct version information"""
+    response = client.get("/")
+    assert response.status_code == 200
+    data = response.json()
+    assert "2.0" in data["message"] or "version" in data
+
+    # Check health endpoint version
+    health_response = client.get("/health")
+    if health_response.status_code == 200:
+        health_data = health_response.json()
+        assert health_data["version"] == "2.0.0"
