@@ -324,9 +324,8 @@ curl -X POST http://localhost:8000/demonstrate \
 - Análisis de comunicación persuasiva
 - Herramienta educativa para equipos
 
-## Soporte y Contacto
+## Soporte
 
-Para dudas sobre el funcionamiento del sistema:
 1. Revisar los logs: `make logs`
 2. Verificar estado: `make status`  
 3. Ejecutar diagnósticos: `make env-check`
