@@ -194,12 +194,14 @@ The user's latest message is the last one above. Respond by defending your posit
         """
         message_lower = message.lower()
 
-        # Topic detection with keywords
+        # Topic detection with keywords (removed vaccines)
         topic_keywords = {
-            "flat_earth": ["flat earth", "earth is flat", "round earth", "globe", "sphere", "curved", "horizon"],
-            "vaccines": ["vaccine", "vaccination", "immunization", "shot", "pfizer", "moderna", "covid vaccine"],
-            "climate": ["climate change", "global warming", "environment", "carbon", "emissions", "greenhouse"],
-            "crypto": ["crypto", "bitcoin", "blockchain", "digital currency", "ethereum", "cryptocurrency"]
+            "flat_earth": ["flat earth", "earth is flat", "round earth", "globe", "sphere", "curved", "horizon",
+                           "nasa conspiracy"],
+            "climate": ["climate change", "global warming", "environment", "carbon", "emissions", "greenhouse",
+                        "renewable energy"],
+            "crypto": ["crypto", "bitcoin", "blockchain", "digital currency", "ethereum", "cryptocurrency", "defi",
+                       "web3"]
         }
 
         for topic, keywords in topic_keywords.items():
