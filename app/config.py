@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     }
 
     def __init__(self, **kwargs):
+        if not os.getenv('OPENAI_API_KEY'):
+            print("🚨 TRYING TO LOAD .env FILE...")
+            from dotenv import load_dotenv
+            load_dotenv()
         super().__init__(**kwargs)
 
         # DEBUGGING MAS AGRESIVO
