@@ -1,0 +1,71 @@
+     # Railway ignore file - archivos que no se suben al deployment
+
+# Local development
+.env
+.env.local
+.env.development
+
+# Testing
+tests/
+pytest.ini
+.coverage
+htmlcov/
+
+# Documentation
+README.md
+docs/
+
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local services (no se necesitan en Railway)
+docker-compose.yml
+docker-compose.local.yml
+Makefile
+make.ps1
+
+# Backups
+backups/
+
+# Logs
+*.log
+logs/
