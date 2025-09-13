@@ -1,8 +1,8 @@
 # app/config.py
 import os
 from typing import Optional
+from pydantic import Field, BaseModel
 from pydantic_settings import BaseSettings
-
 
 class Settings(BaseSettings):
     """Application settings with environment variable support"""
@@ -10,12 +10,12 @@ class Settings(BaseSettings):
     # Application Configuration
     app_name: str = "Kopi Chatbot API"
     app_version: str = "2.0.0"
-    environment: str = "development"
-    log_level: str = "INFO"
+    environment: str = Field("development", alias="ENVIRONMENT")
+    log_level: str = Field("INFO", alias="LOG_LEVEL")
     api_timeout_seconds: int = 30
 
     # Redis Configuration
-    redis_url: str = "redis://localhost:6379"
+    redis_url: str = Field("redis://localhost:6379", alias="REDIS_URL")
     redis_db: int = 0
     redis_decode_responses: bool = True
 
@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     max_conversation_messages: int = 10
 
     # OpenAI API Configuration
-    openai_api_key: Optional[str] = None
+    openai_api_key: Optional[str] = Field(None, alias="OPENAI_API_KEY")
     openai_enabled: bool = True
     openai_model: str = "gpt-3.5-turbo"
     openai_max_tokens: int = 150
@@ -32,9 +32,9 @@ class Settings(BaseSettings):
     openai_timeout: int = 30
 
     # Meta-Persuasion Configuration
-    meta_persuasion_enabled: bool = True
-    educational_mode_enabled: bool = True
-    educational_content_frequency: float = 0.3  # 30% chance to add educational content
+    meta_persuasion_enabled: bool = Field(True, alias="META_PERSUASION_ENABLED")
+    educational_mode_enabled: bool = Field(True, alias="EDUCATIONAL_MODE_ENABLED")
+    educational_content_frequency: float = Field(0.3, alias="EDUCATIONAL_CONTENT_FREQUENCY")
 
     # Debate Service Configuration
     debate_educational_mode: bool = True
@@ -55,17 +55,6 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
-
-        # Environment variable mapping
-        fields = {
-            'openai_api_key': {'env': 'OPENAI_API_KEY'},
-            'redis_url': {'env': 'REDIS_URL'},
-            'log_level': {'env': 'LOG_LEVEL'},
-            'environment': {'env': 'ENVIRONMENT'},
-            'meta_persuasion_enabled': {'env': 'META_PERSUASION_ENABLED'},
-            'educational_mode_enabled': {'env': 'EDUCATIONAL_MODE_ENABLED'},
-            'educational_content_frequency': {'env': 'EDUCATIONAL_CONTENT_FREQUENCY'},
-        }
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
