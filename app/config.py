@@ -60,30 +60,9 @@ class Settings(BaseSettings):
     }
 
     def __init__(self, **kwargs):
-        if not os.getenv('OPENAI_API_KEY'):
-            print("🚨 TRYING TO LOAD .env FILE...")
-            from dotenv import load_dotenv
-            load_dotenv()
+
         super().__init__(**kwargs)
 
-        print(f"🔍 REDIS_URL completa: {self.redis_url}")
-        print(f"🔍 Primeros 50 chars: {self.redis_url[:50]}...")
-        # DEBUGGING MAS AGRESIVO
-        print("🔥 DEBUGGING RAILWAY VARIABLES:")
-        print("=" * 50)
-
-        # Debug direct OS environment
-        print(f"Direct os.getenv('OPENAI_API_KEY'): {bool(os.getenv('OPENAI_API_KEY'))}")
-        print(f"Direct os.getenv('REDIS_URL'): {os.getenv('REDIS_URL', 'NOT_SET')}")
-
-        # Debug all Railway vars
-        railway_vars = {k: v for k, v in os.environ.items() if 'RAILWAY' in k or 'REDIS' in k or 'OPENAI' in k}
-        print(f"Railway-related env vars: {list(railway_vars.keys())}")
-
-        # Debug loaded values
-        print(f"🔍 OPENAI_API_KEY loaded: {'✅ Yes' if self.openai_api_key else '❌ No'}")
-        print(f"🔍 REDIS_URL: {self.redis_url}")
-        print("=" * 50)
 
         self._validate_settings()
 
