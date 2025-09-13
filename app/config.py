@@ -66,6 +66,8 @@ class Settings(BaseSettings):
             load_dotenv()
         super().__init__(**kwargs)
 
+        print(f"🔍 REDIS_URL completa: {self.redis_url}")
+        print(f"🔍 Primeros 50 chars: {self.redis_url[:50]}...")
         # DEBUGGING MAS AGRESIVO
         print("🔥 DEBUGGING RAILWAY VARIABLES:")
         print("=" * 50)
