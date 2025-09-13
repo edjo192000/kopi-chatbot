@@ -52,7 +52,6 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = False
     rate_limit_requests_per_minute: int = 60
 
-    # CAMBIO PRINCIPAL: Pydantic V2 syntax
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
@@ -62,10 +61,25 @@ class Settings(BaseSettings):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._validate_settings()
-        # Debug output
+
+        # DEBUGGING MAS AGRESIVO
+        print("🔥 DEBUGGING RAILWAY VARIABLES:")
+        print("=" * 50)
+
+        # Debug direct OS environment
+        print(f"Direct os.getenv('OPENAI_API_KEY'): {bool(os.getenv('OPENAI_API_KEY'))}")
+        print(f"Direct os.getenv('REDIS_URL'): {os.getenv('REDIS_URL', 'NOT_SET')}")
+
+        # Debug all Railway vars
+        railway_vars = {k: v for k, v in os.environ.items() if 'RAILWAY' in k or 'REDIS' in k or 'OPENAI' in k}
+        print(f"Railway-related env vars: {list(railway_vars.keys())}")
+
+        # Debug loaded values
         print(f"🔍 OPENAI_API_KEY loaded: {'✅ Yes' if self.openai_api_key else '❌ No'}")
         print(f"🔍 REDIS_URL: {self.redis_url}")
+        print("=" * 50)
+
+        self._validate_settings()
 
     def _validate_settings(self):
         """Validate configuration settings"""
@@ -105,6 +119,7 @@ class Settings(BaseSettings):
             "timeout": self.openai_timeout,
             "enabled": self.openai_enabled and bool(self.openai_api_key)
         }
+
 
 # Global settings instance
 settings = Settings()
