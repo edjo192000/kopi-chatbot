@@ -1,15 +1,8 @@
 # app/config.py
 import os
-import logging
 from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings
-
-logger = logging.getLogger(__name__)
-logger.info(f"STARTUP DEBUG: ANTHROPIC_API_KEY exists = {'ANTHROPIC_API_KEY' in os.environ}")
-logger.info(f"STARTUP DEBUG: AI_PROVIDER = {os.environ.get('AI_PROVIDER', 'NOT_SET')}")
-logger.info(f"STARTUP DEBUG: ANTHROPIC_API_KEY value = {os.environ.get('ANTHROPIC_API_KEY', 'NOT_FOUND')[:20]}...")
-
 
 class Settings(BaseSettings):
     """Application settings with environment variable support"""
