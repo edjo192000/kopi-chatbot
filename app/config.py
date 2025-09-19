@@ -75,6 +75,12 @@ class Settings(BaseSettings):
 
     def _validate_settings(self):
         """Validate configuration settings"""
+        import logging
+        logging.getLogger(__name__).info(f"🔍 DEBUG: ANTHROPIC_API_KEY in env = {'ANTHROPIC_API_KEY' in os.environ}")
+        logging.getLogger(__name__).info(f"🔍 DEBUG: ANTHROPIC_API_KEY value = {os.environ.get('ANTHROPIC_API_KEY', 'NOT_FOUND')[:20]}...")
+        logging.getLogger(__name__).info(
+            f"🔍 DEBUG: self.anthropic_api_key = {self.anthropic_api_key[:20] if self.anthropic_api_key else 'None'}...")
+
         if not 0.0 <= self.educational_content_frequency <= 1.0:
             raise ValueError("educational_content_frequency must be between 0.0 and 1.0")
 
