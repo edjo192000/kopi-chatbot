@@ -18,8 +18,15 @@ class AIService:
         self.is_available = False
         self._initialize_client()
 
+
     def _initialize_client(self):
         """Initialize Anthropic client if API key is available"""
+
+        # Debug temporal
+        logger.info(f"🔍 DEBUG: anthropic_api_key exists = {hasattr(settings, 'anthropic_api_key')}")
+        logger.info(
+            f"🔍 DEBUG: anthropic_api_key value = {settings.anthropic_api_key[:15] if settings.anthropic_api_key else 'None'}...")
+
         if not hasattr(settings, 'anthropic_api_key') or not settings.anthropic_api_key:
             logger.info("🤖 Anthropic API not configured - using fallback responses")
             return
