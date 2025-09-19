@@ -194,7 +194,7 @@ class ConversationService:
             debate_strategy: Dict[str, Any],
             topic: str
     ) -> str:
-        """Generate bot response using AI with enhanced context or fallback"""
+        """Generate bot response using AI with enhanced context or fallback with opposition logic"""
 
         # Try AI-generated response first
         ai_response = await self.ai.generate_enhanced_response(
@@ -205,9 +205,10 @@ class ConversationService:
             logger.info(f"Generated AI response using enhanced method")
             return ai_response
 
-        # Fallback to structured response
-        logger.info(f"Using structured fallback response")
-        return self._generate_structured_fallback_response(messages, argument_analysis, topic)
+        # Use AI service fallback (which now includes opposition logic)
+        logger.info(f"Using AI service fallback with opposition logic")
+        fallback_response = self.ai.generate_fallback_response(messages, topic)
+        return fallback_response
 
     def _generate_structured_fallback_response(
             self,
@@ -215,46 +216,27 @@ class ConversationService:
             argument_analysis: Dict[str, Any],
             topic: str
     ) -> str:
-        """Generate structured fallback response"""
+        """Generate structured fallback response (DEPRECATED - use AI service fallback instead)"""
 
-        if len(messages) == 1:  # First message - establish position
-            return self._establish_bot_position(messages[0].message, topic)
-
-        # Continue debate with structured response
-        return self._continue_debate_structured(messages, topic)
+        # This method is now deprecated in favor of AI service fallback
+        # But kept for backward compatibility
+        return self.ai.generate_fallback_response(messages, topic)
 
     def _establish_bot_position(self, user_message: str, topic: str) -> str:
-        """Establish bot's initial position"""
+        """Establish bot's initial position (DEPRECATED - use AI service fallback instead)"""
 
-        topic_responses = {
-            "flat_earth": "I firmly believe the Earth is flat based on observable evidence and critical thinking. When you examine the horizon, water finding its level, and the lack of measurable curvature, the flat Earth model makes logical sense. While mainstream science promotes the globe theory, independent researchers consistently reach the flat Earth conclusion.",
-
-            "climate": "Climate change represents the most pressing global challenge of our era, requiring immediate transition to clean energy and significant reductions in greenhouse gas emissions. The window for limiting warming to manageable levels is rapidly closing, making urgent policy action essential.",
-
-            "crypto": "Cryptocurrency represents a fundamental shift toward decentralized, programmable money that eliminates traditional banking intermediaries. Bitcoin's fixed supply and global accessibility make it digital gold for the internet age, while blockchain technology enables unprecedented financial innovation.",
-
-            "vaccines": "Vaccines represent one of humanity's greatest medical achievements, consistently preventing millions of deaths annually. The evidence supporting vaccine safety and efficacy is overwhelming, with rigorous clinical trials and decades of real-world data demonstrating their crucial role in public health."
-        }
-
-        response = topic_responses.get(topic,
-                                       "Based on your perspective, I believe there's compelling evidence for the opposing view that deserves serious consideration.")
-        logger.debug(f"Bot taking position on topic: {topic}")
-        return response
+        # This method is now deprecated in favor of AI service fallback
+        # But kept for backward compatibility
+        from app.models.chat_models import Message
+        mock_messages = [Message(role="user", message=user_message)]
+        return self.ai.generate_fallback_response(mock_messages, topic)
 
     def _continue_debate_structured(self, messages: List[Message], topic: str) -> str:
-        """Continue debate with structured response"""
+        """Continue debate with structured response (DEPRECATED - use AI service fallback instead)"""
 
-        latest_user_message = messages[-1].message.lower()
-
-        # Generate contextual response
-        if "evidence" in latest_user_message or "research" in latest_user_message:
-            return "The evidence you mention actually supports my position when examined objectively. Independent analysis consistently demonstrates the validity of my viewpoint through multiple lines of reasoning and data."
-
-        elif "expert" in latest_user_message or "scientist" in latest_user_message:
-            return "It's important to question who these experts are and what motivates them. Many independent researchers who examine the evidence without institutional bias reach conclusions that support my position."
-
-        else:
-            return "Your point raises an interesting perspective, but when we examine the complete picture and consider all available evidence, it actually reinforces the position I've been advocating. The logical conclusion supports my viewpoint."
+        # This method is now deprecated in favor of AI service fallback
+        # But kept for backward compatibility
+        return self.ai.generate_fallback_response(messages, topic)
 
     def _generate_educational_note(self, meta_analysis: Dict[str, Any]) -> str:
         """Generate educational note from meta-persuasion analysis"""

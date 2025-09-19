@@ -24,13 +24,23 @@ class Settings(BaseSettings):
     conversation_ttl_seconds: int = 3600  # 1 hour
     max_conversation_messages: int = 10
 
-    # OpenAI API Configuration
+    # OpenAI API Configuration (Legacy - kept for backwards compatibility)
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
     openai_enabled: bool = True
     openai_model: str = "gpt-3.5-turbo"
     openai_max_tokens: int = 150
     openai_temperature: float = 0.7
     openai_timeout: int = 30
+
+    # Anthropic Claude API Configuration (New Primary AI Provider)
+    anthropic_api_key: Optional[str] = Field(default=None, env="ANTHROPIC_API_KEY")
+    anthropic_enabled: bool = True
+    anthropic_model: str = Field(default="claude-3-haiku-20240307", env="ANTHROPIC_MODEL")
+    anthropic_max_tokens: int = Field(default=200, env="ANTHROPIC_MAX_TOKENS")
+    anthropic_timeout: int = Field(default=30, env="ANTHROPIC_TIMEOUT")
+
+    # AI Provider Selection (prioritize Anthropic over OpenAI)
+    preferred_ai_provider: str = Field(default="anthropic", env="AI_PROVIDER")  # "anthropic" or "openai"
 
     # Meta-Persuasion Configuration
     meta_persuasion_enabled: bool = Field(default=True, env="META_PERSUASION_ENABLED")
@@ -60,10 +70,7 @@ class Settings(BaseSettings):
     }
 
     def __init__(self, **kwargs):
-
         super().__init__(**kwargs)
-
-
         self._validate_settings()
 
     def _validate_settings(self):
@@ -77,10 +84,30 @@ class Settings(BaseSettings):
         if self.max_conversation_messages < 2:
             raise ValueError("max_conversation_messages must be at least 2")
 
-        if self.openai_enabled and not self.openai_api_key:
+        # Validate AI provider configuration
+        if self.preferred_ai_provider not in ["anthropic", "openai"]:
+            raise ValueError("preferred_ai_provider must be either 'anthropic' or 'openai'")
+
+        # Check if preferred AI provider is properly configured
+        if self.preferred_ai_provider == "anthropic":
+            if self.anthropic_enabled and not self.anthropic_api_key:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Anthropic is enabled and preferred but no API key provided. Will try OpenAI fallback or use fallback responses."
+                )
+
+        if self.preferred_ai_provider == "openai":
+            if self.openai_enabled and not self.openai_api_key:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "OpenAI is enabled and preferred but no API key provided. Will try Anthropic fallback or use fallback responses."
+                )
+
+        # Warn if no AI providers are configured
+        if not (self.anthropic_api_key or self.openai_api_key):
             import logging
             logging.getLogger(__name__).warning(
-                "OpenAI is enabled but no API key provided. Will use fallback responses."
+                "No AI provider API keys configured. Will use fallback responses only."
             )
 
         if self.max_message_length < 10:
@@ -103,6 +130,51 @@ class Settings(BaseSettings):
             "temperature": self.openai_temperature,
             "timeout": self.openai_timeout,
             "enabled": self.openai_enabled and bool(self.openai_api_key)
+        }
+
+    @property
+    def anthropic_config(self) -> dict:
+        """Get Anthropic configuration"""
+        return {
+            "api_key": self.anthropic_api_key,
+            "model": self.anthropic_model,
+            "max_tokens": self.anthropic_max_tokens,
+            "timeout": self.anthropic_timeout,
+            "enabled": self.anthropic_enabled and bool(self.anthropic_api_key)
+        }
+
+    @property
+    def active_ai_config(self) -> dict:
+        """Get configuration for the currently active AI provider"""
+        if self.preferred_ai_provider == "anthropic" and self.anthropic_config["enabled"]:
+            return {**self.anthropic_config, "provider": "anthropic"}
+        elif self.preferred_ai_provider == "openai" and self.openai_config["enabled"]:
+            return {**self.openai_config, "provider": "openai"}
+        elif self.anthropic_config["enabled"]:  # Fallback to Anthropic if available
+            return {**self.anthropic_config, "provider": "anthropic"}
+        elif self.openai_config["enabled"]:  # Fallback to OpenAI if available
+            return {**self.openai_config, "provider": "openai"}
+        else:
+            return {"provider": "fallback", "enabled": False}
+
+    def is_ai_available(self) -> bool:
+        """Check if any AI provider is available"""
+        return self.anthropic_config["enabled"] or self.openai_config["enabled"]
+
+    def get_ai_status(self) -> dict:
+        """Get status of all AI providers"""
+        return {
+            "preferred_provider": self.preferred_ai_provider,
+            "anthropic": {
+                "available": self.anthropic_config["enabled"],
+                "model": self.anthropic_model
+            },
+            "openai": {
+                "available": self.openai_config["enabled"],
+                "model": self.openai_model
+            },
+            "active_provider": self.active_ai_config["provider"],
+            "fallback_enabled": True
         }
 
 
