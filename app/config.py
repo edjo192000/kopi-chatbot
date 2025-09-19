@@ -7,7 +7,9 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     """Application settings with environment variable support"""
-
+    import logging
+    logging.getLogger().info(f"🔍 STARTUP DEBUG: ANTHROPIC_API_KEY exists = {'ANTHROPIC_API_KEY' in os.environ}")
+    logging.getLogger().info(f"🔍 STARTUP DEBUG: AI_PROVIDER = {os.environ.get('AI_PROVIDER', 'NOT_SET')}")
     # Application Configuration
     app_name: str = "Kopi Chatbot API"
     app_version: str = "2.0.0"
