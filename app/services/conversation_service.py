@@ -55,9 +55,11 @@ class ConversationService:
             bot_position = self._get_bot_position(messages)
 
             # Step 7: Check if educational mode should be enabled
-            should_add_educational_content = self._should_add_educational_content(
-                user_persuasion_analysis, len(messages)
-            )
+            # should_add_educational_content = self._should_add_educational_content(
+            #     user_persuasion_analysis, len(messages)
+            # )
+
+            should_add_educational_content = False
 
             # Step 8: Generate bot response
             if should_add_educational_content:
